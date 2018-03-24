@@ -45,40 +45,83 @@ class Filtering():
 
         return np.array(results), np.array(x_preds)
 
+    def _gen_data(self, x0, dx, count, noise_factor=1, accel=0.):
+        """ Generate noisy data with zero mean and unit standard variation
+        """
+        zs = []
+        truth = []
+        for i in range(count):
+            truth.append(x0 + dx*i)
+            zs.append(x0 + dx*i + np.random.randn()*noise_factor)
+            dx += accel
+        return zs, truth
+
     def _test_g_h_filter(self):
         # generate random data points (measurements)
         # sample data points from a normal distribution plus a trend
-        n_data = 100
-        mean = 0
-        std_dev = 2
-        data = np.zeros(n_data)
 
-        # truth values
-        trend = .5      # change in state dx
-        truth = np.linspace(mean, mean + n_data*trend, n_data)
-
-        # generate measurements
-        for i in range(n_data):
-            data[i] = truth[i] + np.random.normal(mean, std_dev)
+        # generate measurements and truth value
+        meas_x0 = 10
+        meas_dx = 0
+        n_data = 20
+        noise_factor = 0
+        accel = 2
+        measurements, truth = self._gen_data(meas_x0, meas_dx, n_data, noise_factor, accel)
 
         # define filter initial conditions
-        x0 = 0
-        dx = 0.1
-        g, h = 6/10, 2/3
+        x0 = 10
+        dx = 0
+        g, h = 0.2, 0.02
         dt = 1
 
         # filter
-        results, x_preds = self.g_h_filter(data, x0, dx, g, h, dt)
+        results, x_preds = self.g_h_filter(measurements, x0, dx, g, h, dt)
 
         # plot results
         plt.figure()
         plt.title('g-h Filter')
         plt.xlabel('Time Step []')
         plt.ylabel('Value []')
-        plt.plot(data, 'kx', label='measurements')
+        plt.plot(measurements, 'kx', label='measurements')
         plt.plot(truth, 'k--', label='truth')
         plt.plot(results, label='filtered')
-        plt.plot(x_preds, 'x', label='pred')
+        # plt.plot(x_preds, 'x', label='pred')
+        plt.grid()
+        plt.legend(loc='best')
+        plt.xlim([0, n_data - 1])
+        plt.show()
+
+    def _test_g_h_filter_bad_init(self):
+        """ Example for bad initial conditions
+        """
+        # generate random data points (measurements)
+        # sample data points from a normal distribution plus a trend
+
+        # generate measurements
+        meas_x0 = 5
+        meas_dx = 2
+        n_data = 50
+        noise_factor = 10
+        measurements, truth = self._gen_data(meas_x0, meas_dx, n_data, noise_factor, accel=.1)
+
+        # define filter initial conditions
+        x0 = 100
+        dx = 2
+        g, h = 0.2, 0.02
+        dt = 1
+
+        # filter
+        results, x_preds = self.g_h_filter(measurements, x0, dx, g, h, dt)
+
+        # plot results
+        plt.figure()
+        plt.title('g-h Filter')
+        plt.xlabel('Time Step []')
+        plt.ylabel('Value []')
+        plt.plot(measurements, 'kx', label='measurements')
+        plt.plot(truth, 'k--', label='truth')
+        plt.plot(results, label='filtered')
+        # plt.plot(x_preds, 'x', label='pred')
         plt.grid()
         plt.legend(loc='best')
         plt.xlim([0, n_data - 1])
